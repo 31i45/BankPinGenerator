@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank PIN Generator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: #12121c;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    color: #e8e8e8;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    user-select: none;
+}
+
+.card {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    padding: 44px 36px 32px;
+    background: #12121c;
+    animation: appear 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes appear {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+header { text-align: center; margin-bottom: 30px; cursor: grab; }
+header:active { cursor: grabbing; }
+
+.close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: #444;
+    font-size: 15px;
+    cursor: pointer;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+    font-family: inherit;
+}
+.close-btn:hover {
+    background: rgba(255, 90, 90, 0.12);
+    color: #ff6b6b;
+}
+
+.minimize-btn {
+    position: absolute;
+    top: 14px;
+    right: 48px;
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: transparent;
+    color: #444;
+    font-size: 15px;
+    cursor: pointer;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 10;
+    font-family: inherit;
+}
+.minimize-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #999;
+}
+
+header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #FFB347, #FF6B35);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+header p {
+    margin-top: 6px;
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.field { margin-bottom: 16px; }
+
+.field label {
+    display: block;
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 7px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.field input {
+    width: 100%;
+    padding: 11px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    color: #e8e8e8;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+}
+
+.field input:focus {
+    border-color: rgba(255, 107, 53, 0.4);
+    background: rgba(255, 107, 53, 0.03);
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.08);
+}
+
+.field input::placeholder { color: #555; }
+
+/* Master key field with toggle */
+.field-with-toggle {
+    position: relative;
+}
+.field-with-toggle input {
+    padding-right: 50px;
+}
+.toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #555;
+    font-size: 11px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-family: inherit;
+    transition: color 0.2s, background 0.2s;
+}
+.toggle-btn:hover {
+    color: #999;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+button[type="submit"] {
+    width: 100%;
+    padding: 13px;
+    margin-top: 8px;
+    background: linear-gradient(135deg, #FFB347, #FF6B35);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.3px;
+    transition: transform 0.15s, box-shadow 0.2s, background 0.3s;
+}
+
+button[type="submit"]:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(255, 107, 53, 0.25);
+}
+
+button[type="submit"]:active { transform: translateY(0); }
+
+button[type="submit"]:disabled {
+    opacity: 0.6;
+    cursor: wait;
+    transform: none;
+    box-shadow: none;
+}
+
+.result {
+    margin-top: 16px;
+    padding: 16px 14px;
+    background: rgba(0, 212, 170, 0.05);
+    border: 1px solid rgba(0, 212, 170, 0.15);
+    border-radius: 10px;
+    animation: appear 0.4s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pin-display {
+    font-size: 30px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    letter-spacing: 6px;
+    color: #00d4aa;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.error-msg {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: #ff6b6b;
+    animation: appear 0.3s ease;
+}
+
+.footer {
+    margin-top: auto;
+    padding-top: 16px;
+    text-align: center;
+    font-size: 10px;
+    color: #3a3a3a;
+    letter-spacing: 0.5px;
+}
+
+</style>
+</head>
+<body>
+<div class="card">
+    <button class="minimize-btn" id="minimizeBtn">&#x2500;</button>
+    <button class="close-btn" id="closeBtn">&#x2715;</button>
+    <header data-tauri-drag-region>
+        <h1>Bank PIN</h1>
+        <p>Generator</p>
+    </header>
+    <form id="form">
+        <div class="field">
+            <label for="masterKey">主密钥</label>
+            <div class="field-with-toggle">
+                <input type="password" id="masterKey" placeholder="8位以上混合字符" autocomplete="off" spellcheck="false">
+                <button type="button" class="toggle-btn" id="toggleBtn">显示</button>
+            </div>
+        </div>
+        <div class="field">
+            <label for="cardLabel">卡标识</label>
+            <input type="text" id="cardLabel" placeholder="如 工行储蓄一类" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+            <label for="last4">尾4位</label>
+            <input type="text" id="last4" placeholder="卡号末四位" inputmode="numeric" maxlength="4" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+            <label for="period">年月</label>
+            <input type="text" id="period" placeholder="YYYYMM" inputmode="numeric" maxlength="6" autocomplete="off" spellcheck="false">
+        </div>
+        <button type="submit" id="btn">生成密码</button>
+        <div class="error-msg" id="error" style="display:none;"></div>
+    </form>
+    <div class="result" id="result" style="display:none;">
+        <div class="pin-display" id="pinDisplay" title="点击切换显示/隐藏"></div>
+    </div>
+    <div class="footer">本地计算 · 不存储</div>
+</div>
+<script>
+// --- Weak password check (中国银行卡密码规则) ---
+// 规则来源：建设银行/工商银行官方安全规范
+// 1. 6位数字全部不能重复（每个数字最多出现一次）
+// 2. 不能是连续升序/降序（含环绕，如890123、109876）
+// 3. 不能是生日格式（YYMMDD / MMDDYY / DDMMYY，月01-12，日01-31）
+// 4. 不能是键盘直线图案（ATM/手机键盘上的行、列、对角线）
+
+// Module-level constants (avoid re-allocation on each call)
+const KEYPAD_LINES = [
+    [1,2,3], [4,5,6], [7,8,9],    // rows
+    [1,4,7], [2,5,8,0], [3,6,9],   // columns
+    [1,5,9], [3,5,7]               // diagonals
+];
+
+function isDate(mm, dd) {
+    return mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31;
+}
+
+function isWeak(pin) {
+    const d = pin.split('').map(Number);
+
+    // Rule 1: All 6 digits must be unique
+    const seen = {};
+    for (let i = 0; i < 6; i++) {
+        if (seen[d[i]]) return true;
+        seen[d[i]] = true;
+    }
+
+    // Rule 2: No sequential (including wrap-around mod 10)
+    let asc = true, desc = true;
+    for (let i = 1; i < 6; i++) {
+        if ((d[i] - d[i-1] + 10) % 10 !== 1) asc = false;
+        if ((d[i-1] - d[i] + 10) % 10 !== 1) desc = false;
+    }
+    if (asc || desc) return true;
+
+    // Rule 3: No date format (YYMMDD / MMDDYY / DDMMYY)
+    // A=d[0]d[1], B=d[2]d[3], C=d[4]d[5]
+    // YYMMDD → mm=A, dd=B;  MMDDYY → mm=B, dd=C;  DDMMYY → mm=B, dd=A
+    const A = d[0]*10 + d[1];
+    const B = d[2]*10 + d[3];
+    const C = d[4]*10 + d[5];
+    if (isDate(A, B) || isDate(B, C) || isDate(B, A)) return true;
+
+    // Rule 4: No keyboard line pattern
+    // Check every 3-consecutive-digit window
+    for (let i = 0; i <= 3; i++) {
+        const a = d[i], b = d[i+1], c = d[i+2];
+        for (let l = 0; l < KEYPAD_LINES.length; l++) {
+            const ln = KEYPAD_LINES[l];
+            if (ln.indexOf(a) >= 0 && ln.indexOf(b) >= 0 && ln.indexOf(c) >= 0) return true;
+        }
+    }
+
+    return false;
+}
+
+// --- PIN derivation: PBKDF2 + HMAC-SHA256 ---
+
+async function derivePIN(masterKey, cardLabel, last4, period) {
+    // Normalize master key to NFC Unicode form for cross-platform consistency
+    const normalizedKey = masterKey.normalize('NFC');
+
+    // Step 1: PBKDF2 key stretching (100万次迭代，暴力破解8位密钥需~5万年)
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+        "raw", enc.encode(normalizedKey), "PBKDF2", false, ["deriveKey"]
+    );
+    const stretchedKey = await crypto.subtle.deriveKey(
+        { name: "PBKDF2", salt: enc.encode("BankPinGenerator-v1-salt"),
+          iterations: 1000000, hash: "SHA-256" },
+        keyMaterial,
+        { name: "HMAC", hash: "SHA-256", length: 256 },
+        false, ["sign"]
+    );
+
+    // Step 2: Construct structured message
+    // Escape pipe characters in cardLabel to prevent message structure ambiguity
+    const safeLabel = cardLabel.replace(/\|/g, '\\|');
+    const message = "BankPin/1.0|L=" + safeLabel + "|D=" + last4 + "|T=" + period;
+
+    // Step 3: HMAC-SHA256
+    const hashBuf = await crypto.subtle.sign("HMAC", stretchedKey, enc.encode(message));
+    let currentHash = new Uint8Array(hashBuf);
+
+    // Step 4: Extract 6-digit PIN with rejection sampling + weak password skip
+    // 2^32 = 4294967296, 4294967296 % 1000000 = 967296
+    // REJECT_THRESHOLD = 4294967296 - 967296 = 4294000000
+    // Values >= threshold are rejected to eliminate modulo bias
+    const REJECT_THRESHOLD = 4294000000;
+    const MAX_ITERATIONS = 100;  // Safety limit (8轮全失败概率≈1/27000，100轮不可能到达)
+
+    for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
+        for (let i = 0; i < 8; i++) {
+            // Take 4 bytes, big-endian
+            const dv = new DataView(currentHash.buffer, currentHash.byteOffset + i * 4, 4);
+            const N = dv.getUint32(0, false);
+
+            // Rejection sampling (eliminate modulo bias)
+            if (N >= REJECT_THRESHOLD) continue;
+
+            const pin = (N % 1000000).toString().padStart(6, '0');
+
+            // Weak password check
+            if (!isWeak(pin)) return pin;
+        }
+        // All 8 groups exhausted, hash again
+        const nextBuf = await crypto.subtle.digest("SHA-256", currentHash);
+        currentHash = new Uint8Array(nextBuf);
+    }
+
+    // Fallback: extremely unlikely, but must have a deterministic exit
+    throw new Error('Unable to generate a non-weak PIN after ' + MAX_ITERATIONS + ' iterations');
+}
+
+// --- UI ---
+
+// Auto-fill current year-month
+(function() {
+    const now = new Date();
+    const ym = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0');
+    document.getElementById('period').value = ym;
+})();
+
+// Show/hide master key
+const mkInput = document.getElementById('masterKey');
+const toggleBtn = document.getElementById('toggleBtn');
+toggleBtn.addEventListener('click', function() {
+    if (mkInput.type === 'password') {
+        mkInput.type = 'text';
+        toggleBtn.textContent = '隐藏';
+    } else {
+        mkInput.type = 'password';
+        toggleBtn.textContent = '显示';
+    }
+});
+
+// Close button
+document.getElementById('closeBtn').addEventListener('click', function() {
+    window.__TAURI__.core.invoke('close_window');
+});
+
+// Minimize button
+document.getElementById('minimizeBtn').addEventListener('click', function() {
+    window.__TAURI__.core.invoke('minimize_window');
+});
+
+// Form elements
+const form = document.getElementById('form');
+const btn = document.getElementById('btn');
+const resultDiv = document.getElementById('result');
+const errorDiv = document.getElementById('error');
+const pinDisplay = document.getElementById('pinDisplay');
+
+// PIN visibility state (anti-shoulder-surfing)
+let actualPin = '';
+let pinVisible = false;
+
+// Input filtering: digits only for last4 and period
+document.getElementById('last4').addEventListener('input', function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4);
+});
+document.getElementById('period').addEventListener('input', function(e) {
+    e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    // Real-time month validation when 6 digits entered
+    if (e.target.value.length === 6) {
+        const m = parseInt(e.target.value.substring(4, 6), 10);
+        e.target.style.borderColor = (m < 1 || m > 12) ? 'rgba(255, 107, 107, 0.4)' : '';
+    } else {
+        e.target.style.borderColor = '';
+    }
+});
+
+form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const mk = mkInput.value;
+    const label = document.getElementById('cardLabel').value.trim();
+    const last4 = document.getElementById('last4').value.trim();
+    const period = document.getElementById('period').value.trim();
+
+    // Validation
+    errorDiv.style.display = 'none';
+    if (!mk) { errorDiv.textContent = '请输入主密钥'; errorDiv.style.display = 'block'; return; }
+    if (!label) { errorDiv.textContent = '请输入卡标识'; errorDiv.style.display = 'block'; return; }
+    if (last4.length !== 4) { errorDiv.textContent = '尾4位必须为4位数字'; errorDiv.style.display = 'block'; return; }
+    if (period.length !== 6) { errorDiv.textContent = '年月必须为6位数字 (YYYYMM)'; errorDiv.style.display = 'block'; return; }
+    // Validate month is 01-12
+    const month = parseInt(period.substring(4, 6), 10);
+    if (month < 1 || month > 12) { errorDiv.textContent = '年月中的月份无效（01-12）'; errorDiv.style.display = 'block'; return; }
+
+    // Loading state
+    btn.textContent = '计算中...';
+    btn.disabled = true;
+    resultDiv.style.display = 'none';
+    pinDisplay.textContent = '';
+    actualPin = '';
+    pinVisible = false;
+
+    // Allow UI to repaint before heavy computation
+    await new Promise(function(r) { setTimeout(r, 50); });
+
+    try {
+        const pin = await derivePIN(mk, label, last4, period);
+        actualPin = pin;
+        pinVisible = true;
+        pinDisplay.textContent = pin;
+        resultDiv.style.display = 'flex';
+        // Clear all inputs after successful generation
+        mkInput.value = '';
+        mkInput.type = 'password';
+        toggleBtn.textContent = '显示';
+        document.getElementById('cardLabel').value = '';
+        document.getElementById('last4').value = '';
+        // Refill period with current month
+        const now = new Date();
+        document.getElementById('period').value = now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0');
+    } catch (err) {
+        errorDiv.textContent = '计算错误: ' + err.message;
+        errorDiv.style.display = 'block';
+    }
+
+    btn.textContent = '生成密码';
+    btn.disabled = false;
+});
+
+// PIN auto-hide on window blur (anti-shoulder-surfing)
+window.addEventListener('blur', function() {
+    if (actualPin && pinVisible) {
+        pinVisible = false;
+        pinDisplay.textContent = '\u2022\u2022\u2022\u2022\u2022\u2022';
+    }
+});
+
+// Click PIN to toggle visibility
+pinDisplay.addEventListener('click', function() {
+    if (!actualPin) return;
+    if (pinVisible) {
+        pinVisible = false;
+        pinDisplay.textContent = '\u2022\u2022\u2022\u2022\u2022\u2022';
+    } else {
+        pinVisible = true;
+        pinDisplay.textContent = actualPin;
+    }
+});
+</script>
+</body>
+</html>

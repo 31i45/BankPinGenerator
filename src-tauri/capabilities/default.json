@@ -1,0 +1,9 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "BankPinGenerator - 最小权限，仅本地运行，无网络无文件系统访问",
+  "windows": ["main"],
+  "permissions": [
+    "core:default"
+  ]
+}
